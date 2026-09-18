@@ -6,11 +6,7 @@ use protobuf::Message;
 use protobuf::UnknownValueRef::*;
 use rsa::{Pkcs1v15Encrypt, RsaPrivateKey};
 
-use crate::r#gen::protos::AvatarDataNotify;
-use crate::r#gen::protos::AvatarInfo;
-use crate::r#gen::protos::Item;
-use crate::r#gen::protos::PacketWithItems;
-use crate::r#gen::protos::Unk;
+use crate::r#gen::protos::{AvatarDataNotify, AvatarInfo, Item, PacketWithItems, Unk};
 
 pub fn matches_get_player_token_rsp(
     data: Vec<u8>,
@@ -26,10 +22,7 @@ pub fn matches_get_player_token_rsp(
                 let possible_encrypted = match field_data {
                     LengthDelimited(encrypted_bytes) => {
                         let encrypted = BASE64_STANDARD.decode(encrypted_bytes);
-                        match encrypted {
-                            Ok(encrypted) => Some(encrypted),
-                            _ => None,
-                        }
+                        encrypted.ok()
                     }
                     _ => None,
                 };
@@ -46,7 +39,7 @@ pub fn matches_get_player_token_rsp(
                 };
                 to_ret.extend(possible_seeds)
             }
-            if to_ret.len() != 0 {
+            if !to_ret.is_empty() {
                 Some(to_ret)
             } else {
                 None
@@ -76,40 +69,34 @@ pub fn matches_achievement_all_data_notify(data: Vec<u8>) -> Option<Vec<Achievem
             // let tags = unknown_fields.iter().map(|(tag, _)| tag).collect::<HashSet<u32>>();
             // if tags.len() != 2 { return None }
             for (field_number, field_data) in unknown_fields.iter() {
-                match field_data {
-                    LengthDelimited(bytes) => {
-                        let d_msg_inside = Unk::parse_from_bytes(bytes);
-                        let unknown_fields_inside;
-                        match d_msg_inside {
-                            Ok(d_msg_inside) => {
-                                unknown_fields_inside = d_msg_inside.unknown_fields().clone()
+                if let LengthDelimited(bytes) = field_data {
+                    let d_msg_inside = Unk::parse_from_bytes(bytes);
+
+                    let unknown_fields_inside = match d_msg_inside {
+                        Ok(d_msg_inside) => d_msg_inside.unknown_fields().clone(),
+                        _ => continue,
+                    };
+                    let mut achievement_map: HashMap<u32, u64> = HashMap::new();
+                    for (field_number_inside, field_data_inside) in unknown_fields_inside.iter() {
+                        match field_data_inside {
+                            Varint(value) => {
+                                let _ = achievement_map.insert(field_number_inside, value);
                             }
-                            _ => continue,
-                        }
-                        let mut achievement_map: HashMap<u32, u64> = HashMap::new();
-                        for (field_number_inside, field_data_inside) in unknown_fields_inside.iter()
-                        {
-                            match field_data_inside {
-                                Varint(value) => {
-                                    let _ = achievement_map.insert(field_number_inside, value);
-                                }
-                                _ => return None, // because proto has only repeated Achievement and repeated uint32, this isn't the right packet.
-                            }
-                        }
-                        achievement_list.push(achievement_map);
-                        match list_tag {
-                            Some(x) => {
-                                if field_number != x {
-                                    return None;
-                                } // if we found several possible tags for the list. Not possible.
-                            }
-                            None => list_tag = Some(field_number),
+                            _ => return None, // because proto has only repeated Achievement and repeated uint32, this isn't the right packet.
                         }
                     }
-                    _ => (),
+                    achievement_list.push(achievement_map);
+                    match list_tag {
+                        Some(x) => {
+                            if field_number != x {
+                                return None;
+                            } // if we found several possible tags for the list. Not possible.
+                        }
+                        None => list_tag = Some(field_number),
+                    }
                 }
             }
-            if achievement_list.len() == 0 {
+            if achievement_list.is_empty() {
                 return None;
             }
 
@@ -137,15 +124,14 @@ pub fn matches_achievement_all_data_notify(data: Vec<u8>) -> Option<Vec<Achievem
                         // Onward and Upward: Ascend a character to Phase 2 for the first time
                         tag_id = Some(tag)
                     }
-                    if possible_tag_status.contains(&tag) {
-                        if value > 3 {
-                            possible_tag_status.retain(|&x| x != tag)
-                        }
+                    if possible_tag_status.contains(&tag) && value > 3 {
+                        possible_tag_status.retain(|&x| x != tag)
                     }
                 }
             }
 
-            if tag_finish_timestamp == None || tag_id == None || possible_tag_status.len() == 0 {
+            if tag_finish_timestamp.is_none() || tag_id.is_none() || possible_tag_status.is_empty()
+            {
                 return None;
             }
 
@@ -169,7 +155,7 @@ pub fn matches_achievement_all_data_notify(data: Vec<u8>) -> Option<Vec<Achievem
                 }
                 achievements.push(achievement)
             }
-            assert!(achievements.len() > 0);
+            assert!(!achievements.is_empty());
             Some(achievements)
         }
         _ => None,

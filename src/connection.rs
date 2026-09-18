@@ -63,6 +63,6 @@ fn validate_ports(port_filter: &[u16], udp: UdpHeader) -> Option<PacketDirection
         Some(PacketDirection::Sent)
     } else {
         trace!(src, dest, "incorrect ports");
-        return None;
+        None
     }
 }

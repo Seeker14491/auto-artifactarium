@@ -1,0 +1,52 @@
+{
+  "name": "Capture-validated 7.0 coordinates",
+  "game_build": "OSRELWin7.0.0_R47805902_S47829085_D48215702",
+  "rules": [
+    {
+      "command_id": 26573,
+      "event": "build",
+      "path": [8],
+      "expected": "OSRELWin7.0.0_R47805902_S47829085_D48215702",
+      "matching": "data_revision"
+    },
+    { "command_id": 6000, "event": "local_uid", "uid": [4] },
+    { "command_id": 9342, "event": "invalidate" },
+    {
+      "command_id": 7886,
+      "entries": [2],
+      "event": "local_team",
+      "scene": [14],
+      "entity": [8],
+      "owner_uid": [7],
+      "active": [2]
+    },
+    { "command_id": 1211, "event": "invalidate_reading" },
+    {
+      "command_id": 6573,
+      "filters": [{ "path": [10], "equals": 3 }],
+      "event": "replace_entity",
+      "previous": [13],
+      "entity": [3, 2],
+      "owner_uid": [3, 10, 1]
+    },
+    {
+      "command_id": 7516,
+      "entries": [11],
+      "event": "union",
+      "command": [15],
+      "body": [8]
+    },
+    {
+      "command_id": 1185,
+      "entries": [14],
+      "filters": [{ "path": [4], "equals": 7 }],
+      "event": "movement",
+      "entity": [6, 1],
+      "position": [6, 2, 1],
+      "tick": [6, 3],
+      "tick_rate_hz": 1000,
+      "axes": [1, 2, 3],
+      "stationary": { "path": [6, 2, 4], "equals": 2 }
+    }
+  ]
+}

@@ -48,18 +48,18 @@ use std::fmt::Write;
 
 use base64::Engine;
 use base64::prelude::BASE64_STANDARD;
-use rsa::{RsaPrivateKey, pkcs1::DecodeRsaPrivateKey};
+use rsa::RsaPrivateKey;
+use rsa::pkcs1::DecodeRsaPrivateKey;
 use tracing::{error, info, info_span, instrument, trace, warn};
 
-use crate::connection::parse_connection_packet;
-use crate::crypto::{bruteforce, decrypt_command, lookup_initial_key};
 // use crate::gen::protos::GetPlayerTokenRsp;
 use crate::Key::Dispatch;
+use crate::connection::parse_connection_packet;
+use crate::crypto::{bruteforce, decrypt_command, lookup_initial_key};
 use crate::r#gen::protos::PacketHead;
 use crate::kcp::KcpSniffer;
-pub use crate::unk_util::Achievement;
 pub use crate::unk_util::{
-    matches_achievement_all_data_notify, matches_avatars_all_data_notify,
+    Achievement, matches_achievement_all_data_notify, matches_avatars_all_data_notify,
     matches_get_player_token_rsp, matches_items_all_data_notify,
 };
 
@@ -72,6 +72,7 @@ fn bytes_as_hex(bytes: &[u8]) -> String {
 
 // pub mod command_id;
 pub mod r#gen;
+pub mod position;
 
 mod connection;
 mod crypto;
@@ -97,7 +98,7 @@ pub enum ConnectionPacket {
 
 #[repr(u16)]
 enum CommandId {
-    AvatarDataNotify =  27799,
+    AvatarDataNotify = 27799,
     PlayerStoreNotify = 22160,
 }
 
@@ -215,7 +216,7 @@ impl GameSniffer {
         let rsa_5 = RsaPrivateKey::from_pkcs1_pem(pem_data_5);
 
         GameSniffer {
-            rsa_keys: vec![rsa_4, rsa_5]
+            rsa_keys: [rsa_4, rsa_5]
                 .iter()
                 .filter_map(|rsa_key| rsa_key.clone().ok())
                 .collect(),
@@ -381,16 +382,15 @@ impl GameSniffer {
         //     return None;
         // }
 
-        if let Some(Dispatch(_)) = self.key {
-            if let Some(possible_seeds) =
+        if let Some(Dispatch(_)) = self.key
+            && let Some(possible_seeds) =
                 matches_get_player_token_rsp(command.proto_data.clone(), self.rsa_keys.clone())
-            {
-                self.possible_seeds = possible_seeds;
-                info!(?self.possible_seeds, "setting new possible session seeds");
-                let header_command = command.parse_proto::<PacketHead>().unwrap();
-                self.sent_time = Some(header_command.sent_ms);
-                info!(?self.sent_time, "setting new send time");
-            }
+        {
+            self.possible_seeds = possible_seeds;
+            info!(?self.possible_seeds, "setting new possible session seeds");
+            let header_command = command.parse_proto::<PacketHead>().unwrap();
+            self.sent_time = Some(header_command.sent_ms);
+            info!(?self.sent_time, "setting new send time");
         }
 
         Some(command)
@@ -398,7 +398,7 @@ impl GameSniffer {
 }
 
 pub fn matches_achievement_packet(game_command: &GameCommand) -> Option<Vec<Achievement>> {
-    return matches_achievement_all_data_notify(game_command.proto_data.clone());
+    matches_achievement_all_data_notify(game_command.proto_data.clone())
 }
 
 pub fn matches_item_packet(game_command: &GameCommand) -> Option<Vec<r#gen::protos::Item>> {
@@ -406,7 +406,7 @@ pub fn matches_item_packet(game_command: &GameCommand) -> Option<Vec<r#gen::prot
         return None;
     }
 
-    return matches_items_all_data_notify(&game_command.proto_data);
+    matches_items_all_data_notify(&game_command.proto_data)
 }
 
 pub fn matches_avatar_packet(game_command: &GameCommand) -> Option<Vec<r#gen::protos::AvatarInfo>> {
@@ -414,5 +414,5 @@ pub fn matches_avatar_packet(game_command: &GameCommand) -> Option<Vec<r#gen::pr
         return None;
     }
 
-    return matches_avatars_all_data_notify(&game_command.proto_data);
+    matches_avatars_all_data_notify(&game_command.proto_data)
 }

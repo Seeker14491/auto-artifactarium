@@ -1,0 +1,11 @@
+{
+  "name": "Synthetic shuffled layout, not a real game mapping",
+  "game_build": "synthetic-only",
+  "rules": [
+    { "command_id": 61000, "event": "build", "path": [9], "expected": "OSRELWin8.0.0_R1_S2_D3" },
+    { "command_id": 61001, "event": "local_uid", "uid": [10] },
+    { "command_id": 61002, "event": "local_team", "entries": [4], "owner_uid": [11], "active": [7], "entity": [5], "scene": [6] },
+    { "command_id": 61003, "event": "union", "entries": [3], "command": [2], "body": [10] },
+    { "command_id": 61004, "event": "movement", "entries": [9], "filters": [{ "path": [8], "equals": 7 }], "entity": [5, 2], "position": [5, 6, 4], "tick": [5, 7], "tick_rate_hz": 60, "axes": [7, 8, 9], "stationary": { "path": [5, 6, 3], "equals": 2 } }
+  ]
+}

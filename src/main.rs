@@ -1,14 +1,10 @@
-use std::{
-    fs,
-    io::{BufReader, Read},
-    path::PathBuf,
-};
+use std::fs;
+use std::io::{BufReader, Read};
+use std::path::PathBuf;
 
-use anyhow::{anyhow, Result};
-use auto_artifactarium::{
-    matches_avatars_all_data_notify, matches_item_packet, matches_items_all_data_notify,
-};
-use clap::{Args, Parser, Subcommand, ValueEnum};
+use anyhow::{Result, anyhow};
+use auto_artifactarium::{matches_avatars_all_data_notify, matches_items_all_data_notify};
+use clap::{Parser, Subcommand};
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]

@@ -1,5 +1,8 @@
 # auto-artifactarium
 
+This fork adds validated position decoding and explicit movement clock metadata
+for Irminsul. See [FORK.md](FORK.md) for provenance, the protocol API, and maintenance.
+
 a library to parse network packets from a certain turn based anime game!
 
 ## use in your projects
@@ -8,7 +11,7 @@ not published to crates.io out of caution. add following to your Cargo.toml to u
 
 ```toml
 [dependencies]
-auto-artifactarium = { git = "https://github.com/PJK136/auto-artifactarium" } # optionally add revision
+auto-artifactarium = { git = "https://github.com/Seeker14491/auto-artifactarium", branch = "codex/player-position" } # pin a verified rev for reproducible builds
 ```
 
 for documentation, use `cargo doc`

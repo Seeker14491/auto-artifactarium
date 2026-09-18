@@ -1,7 +1,7 @@
 use std::time::SystemTime;
 
-use kcp::{get_conv, Kcp, KCP_OVERHEAD};
-use tracing::{error, info, instrument, span, trace, warn, Level};
+use kcp::{KCP_OVERHEAD, Kcp, get_conv};
+use tracing::{Level, error, info, instrument, span, trace, warn};
 
 use crate::bytes_as_hex;
 

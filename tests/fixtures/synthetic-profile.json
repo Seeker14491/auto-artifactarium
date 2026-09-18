@@ -1,0 +1,9 @@
+{
+  "name": "Synthetic test fixture — NOT a Genshin profile",
+  "game_build": "synthetic-only",
+  "rules": [
+    { "command_id": 60001, "event": "scene", "scene": [1] },
+    { "command_id": 60002, "event": "active_entity", "entity": [1] },
+    { "command_id": 60003, "event": "movement", "entity": [1], "position": [2], "tick": [3], "tick_rate_hz": 2, "axes": [1, 2, 3] }
+  ]
+}
