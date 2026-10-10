@@ -11,7 +11,7 @@ not published to crates.io out of caution. add following to your Cargo.toml to u
 
 ```toml
 [dependencies]
-auto-artifactarium = { git = "https://github.com/Seeker14491/auto-artifactarium", branch = "codex/player-position" } # pin a verified rev for reproducible builds
+auto-artifactarium = { git = "https://github.com/Seeker14491/auto-artifactarium", branch = "player-position" } # pin a verified rev for reproducible builds
 ```
 
 for documentation, use `cargo doc`
