@@ -28,7 +28,11 @@ platform remains blocked. The full reference and observed builds remain availabl
 other revisions are accepted by policy, not claimed to be capture-validated.
 Its motion-state names cover only
 observed local states, carried forward from the corroborated 7.0 enum; unknown
-states remain numeric. Co-op and different-scene transitions were not captured.
+states remain numeric. Co-op was not captured. A later October 10 log of a
+cross-scene jump showed the first team update sending the new scene before any
+avatar entity. `TeamMember::entity` is therefore optional: `None` means not yet
+spawned, while a transmitted zero remains an error. Consumers should wait for the
+follow-up update rather than treating the entry as malformed.
 
 The retained `captured_7_0()` profile was validated on
 `OSRELWin7.0.0_R47805902_S47829085_D48139903` and

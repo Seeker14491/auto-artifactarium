@@ -14,7 +14,8 @@ pub struct OwnedEntity {
 #[derive(Debug, Clone)]
 pub struct TeamMember {
     pub scene: u32,
-    pub entity: u32,
+    /// None until the avatar spawns: cross-scene jumps announce the team first.
+    pub entity: Option<u32>,
 }
 
 #[derive(Debug, Clone)]
@@ -292,7 +293,7 @@ impl Decoder {
                                     member: (|| {
                                         Ok(TeamMember {
                                             scene: required_u32(entry, scene)?,
-                                            entity: required_u32(entry, entity)?,
+                                            entity: optional_u32(entry, entity)?,
                                         })
                                     })(),
                                 })
@@ -405,12 +406,19 @@ fn motion_metadata(
 }
 
 fn required_u32(bytes: &[u8], path: &[u32]) -> DecodeResult<u32> {
-    let value = scalar(bytes, path)?.ok_or("Required integer missing")?;
+    optional_u32(bytes, path)?.ok_or_else(|| "Required integer missing".into())
+}
+
+/// Absent is allowed; a transmitted zero or oversized value is still malformed.
+fn optional_u32(bytes: &[u8], path: &[u32]) -> DecodeResult<Option<u32>> {
+    let Some(value) = scalar(bytes, path)? else {
+        return Ok(None);
+    };
     let value = u32::try_from(value).map_err(|_| "Integer exceeds u32")?;
     if value == 0 {
         return Err("Zero scene/entity/UID".into());
     }
-    Ok(value)
+    Ok(Some(value))
 }
 
 fn owned_entity(bytes: &[u8], entity: &[u32], owner: Option<&[u32]>) -> DecodeResult<OwnedEntity> {

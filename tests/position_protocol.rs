@@ -385,13 +385,44 @@ fn shuffled_commands_and_inner_fields_need_only_a_new_json_profile() {
     let member = team[0].as_ref().unwrap();
     assert_eq!(member.owner_uid, Some(9));
     assert_eq!(member.member.as_ref().unwrap().scene, 3);
-    assert_eq!(member.member.as_ref().unwrap().entity, *entity);
+    assert_eq!(member.member.as_ref().unwrap().entity, Some(*entity));
     let motion = motion.as_ref().unwrap().as_ref().unwrap();
     assert_eq!(motion.position.y, 12.5);
     assert_eq!(motion.position.x, 0.);
     assert_eq!(motion.tick, 5);
     assert_eq!(motion.tick_rate_hz, 60);
     assert!(*motion.stationary.as_ref().unwrap());
+}
+
+#[test]
+fn cross_scene_team_announcement_precedes_avatar_entities() {
+    let mut decoder = Decoder::default();
+    let profile = captured_7_1();
+    let build = profile.game_build.clone();
+    decoder.set_profile(profile);
+    decoder.receive(9282, &msg(11, build.as_bytes())).unwrap();
+    // Observed 7.1 layout: the first update after a jump has scene but no entity.
+    let entry = |entity: Option<u64>| {
+        let entity = entity.map_or(vec![], |entity| var(8, entity));
+        msg(8, &[var(2, 1), var(6, 3), entity, var(13, 9)].concat())
+    };
+    let mut members = |body: &[u8]| {
+        let packet = decoder.receive(29245, body).unwrap().unwrap();
+        let [DecodedEvent::Team(team)] = packet.events.as_slice() else {
+            panic!()
+        };
+        team.iter()
+            .map(|entry| entry.as_ref().unwrap().member.clone())
+            .collect::<Vec<_>>()
+    };
+    let pending = members(&entry(None));
+    assert_eq!(pending[0].as_ref().unwrap().scene, 3);
+    assert_eq!(pending[0].as_ref().unwrap().entity, None);
+    let spawned = members(&entry(Some(42)));
+    assert_eq!(spawned[0].as_ref().unwrap().entity, Some(42));
+    // A transmitted zero is malformed rather than pending.
+    let zero = members(&entry(Some(0)));
+    assert_eq!(zero[0].as_ref().unwrap_err(), "Zero scene/entity/UID");
 }
 
 #[test]
