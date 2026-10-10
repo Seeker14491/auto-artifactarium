@@ -13,12 +13,24 @@ dependency. Clone Irminsul recursively or run
 
 `auto_artifactarium::position` provides:
 
-- The captured 7.0 profile, custom JSON profiles, and profile validation.
+- Captured 7.0 and 7.1 profiles, custom JSON profiles, and profile validation.
 - Bounded protobuf parsing with exact float32 coordinate preservation.
 - Build negotiation and ordered decoding of nested batched commands.
 - Typed movement, team, identity, entity replacement, and invalidation events.
 
-The built-in profile was validated on
+The default `captured_7_1()` profile was validated on
+`OSRELWin7.1.0_R48379043_S48455349_D48474090`. The September 23 capture replays
+2,521 packet bodies with 186 accepted positions, four character switches, three
+same-scene teleports, and zero errors. All accepted positions preserve velocity.
+This profile uses `matching: "release_version"`: the `OSRELWin7.1.0` prefix must
+match, while numeric `R/S/D` revisions may differ. A different game version or
+platform remains blocked. The full reference and observed builds remain available;
+other revisions are accepted by policy, not claimed to be capture-validated.
+Its motion-state names cover only
+observed local states, carried forward from the corroborated 7.0 enum; unknown
+states remain numeric. Co-op and different-scene transitions were not captured.
+
+The retained `captured_7_0()` profile was validated on
 `OSRELWin7.0.0_R47805902_S47829085_D48139903` and
 `OSRELWin7.0.0_R47805902_S47829085_D48215702`. The September 15 update was validated
 against 2,148 fresh packet bodies: 165 accepted positions and zero errors with the
@@ -34,7 +46,8 @@ for one command still accept any matching rule. `Decoder::observed_build()` and
 rejected builds; reset clears them and failed nested batches roll back changes.
 Rejection diagnostics distinguish received, missing, and malformed values.
 
-`profiles/position-7.0.json` is the embedded default and a reusable mapping template.
+`profiles/position-7.1.json` is the embedded default and a reusable mapping template.
+The prior `profiles/position-7.0.json` remains available for explicit selection.
 Command IDs, paths, filters, and axis tags are data rather than compiled protocol
 constants. Irminsul can hot-load validated profiles or select one at startup with
 `--position-profile`. Synthetic shuffled-layout tests cover remapping inner and
@@ -42,9 +55,11 @@ outer fields without code changes. Major versions with new event semantics or
 encodings still need decoder changes; automatic mapping discovery is not provided.
 
 The upstream 7.1 update changes inventory/avatar command IDs and their outer
-list fields. It does not supply 7.1 position mappings. The built-in position
-profile remains guarded to the validated 7.0 build family until a new profile
-has been validated against 7.1 captures.
+list fields. It does not supply 7.1 position mappings. The fork's 7.1 position
+profile was independently derived from the September 23 capture and validated
+through Irminsul's application decoder. Message paths, action correlation,
+identity checks, and bit-preservation evidence are documented in Irminsul's
+`docs/capture-validation-7.1.md`.
 
 Reviewed [upstream PR #1](https://github.com/konkers/auto-artifactarium/pull/1): its
 item/avatar heuristics find outer repeated fields but retain fixed inner schemas.
@@ -61,6 +76,7 @@ Every movement rule requires `tick_rate_hz` (integer 1–1,000,000,000). The dec
 propagates it with `Motion::tick_rate_hz` so consumers can convert tick differences
 to seconds without using packet delivery timing. The captured 7.0 profile uses
 1,000 Hz, validated against two recordings spanning approximately 34 and 65 seconds.
+The 7.1 capture also validates 1,000 Hz over approximately 79 seconds.
 Custom mappings must verify their clock rate; profiles without one are rejected.
 
 The library does not select a local player. It returns all matching candidates.
@@ -76,6 +92,22 @@ decoding is preserved. Inherited source received formatting and mechanical Clipp
 cleanup so the local workspace passes Irminsul's strict lint check.
 
 ## Maintenance
+
+Profiles also support optional provenance and message-name annotations, optional
+movement state/velocity mappings with a profile-owned state-name table, and ordered
+uint32 `xor`/`add`/`sub` decoding for `scene` events. Old JSON profiles remain valid.
+`DecodedEvent::Movement.metadata` preserves absent versus zero vectors and raw
+unknown state IDs, including on partial motions. Metadata failures are deferred
+just like candidate positions; consumers should select the entity before requiring
+them. Public Rust structs have new fields, so direct constructors need updating.
+The 7.0 motion mapping was replayed across both existing capture sets without
+changing accepted positions, and its public-schema source is recorded in JSON.
+Scene transforms remain opt-in; built-in scene tracking still uses team context.
+
+Irminsul's `tools/protocol-update.cjs` provides offline schema import, schema-free
+capture surveys, and ranked command comparisons; `docs/protocol-updates.md`
+documents the release-day workflow and strict replay summary/event exports.
+The tools do not auto-discover or activate a compatible profile.
 
 Run `cargo test --release --locked --workspace` from the Irminsul repository root.
 In a standalone clone of this fork, run `cargo test --release`,

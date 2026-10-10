@@ -1,6 +1,6 @@
 //! Exercise the public protocol API without Irminsul or a player tracker.
 use auto_artifactarium::position::{
-    BuildMatching, DecodedEvent, Decoder, Event, Profile, captured_7_0,
+    BuildMatching, DecodedEvent, Decoder, Event, Profile, captured_7_0, captured_7_1,
 };
 
 fn var(field: u32, mut value: u64) -> Vec<u8> {
@@ -65,6 +65,7 @@ fn batches_emit_all_entities_in_wire_order_and_preserve_partial_motion() {
             command,
             entity,
             motion,
+            ..
         } = event
         else {
             panic!()
@@ -209,6 +210,102 @@ fn changed_protocol_families_and_malformed_revisions_are_rejected() {
     let ambiguous = [msg(8, build.as_bytes()), msg(8, build.as_bytes())].concat();
     assert!(decoder.receive(26573, &ambiguous).is_err());
     assert_eq!(decoder.observed_build(), None);
+}
+
+#[test]
+fn release_version_matching_accepts_numeric_revisions_and_preserves_exact_matches() {
+    let profile = captured_7_1();
+    assert!(matches!(
+        profile.rules[0].event,
+        Event::Build {
+            matching: BuildMatching::ReleaseVersion,
+            ..
+        }
+    ));
+    for build in [
+        profile.game_build.as_str(),
+        "OSRELWin7.1.0_R48379043_S48511369_D48533839",
+        "OSRELWin7.1.0_R1_S2_D3",
+        "OSRELWin7.1.0_R0_S0_D0",
+    ] {
+        let mut decoder = Decoder::default();
+        decoder.set_profile(profile.clone());
+        let packet = decoder
+            .receive(9282, &msg(11, build.as_bytes()))
+            .unwrap()
+            .unwrap();
+        assert!(matches!(
+            packet.events.as_slice(),
+            [DecodedEvent::BuildVerified]
+        ));
+        assert!(decoder.build_verified());
+        assert_eq!(decoder.observed_build(), Some(build));
+        assert_eq!(
+            decoder.build_match(),
+            Some(if build == profile.game_build {
+                BuildMatching::Exact
+            } else {
+                BuildMatching::ReleaseVersion
+            })
+        );
+        decoder.reset();
+        assert!(!decoder.build_verified());
+        assert_eq!(decoder.build_match(), None);
+    }
+}
+
+#[test]
+fn release_version_matching_rejects_other_versions_platforms_and_malformed_revisions() {
+    let profile = captured_7_1();
+    let json = include_str!("../profiles/position-7.1.json");
+    for build in [
+        "OSRELWin7.0.0_R1_S2_D3",
+        "OSRELWin7.1.1_R1_S2_D3",
+        "OSRELWin7.2.0_R1_S2_D3",
+        "OSRELWin7.1.00_R1_S2_D3",
+        "OSRELWin7.1.0extra_R1_S2_D3",
+        "CNRELWin7.1.0_R1_S2_D3",
+        "OSRELAndroid7.1.0_R1_S2_D3",
+    ] {
+        let mut decoder = Decoder::default();
+        decoder.set_profile(profile.clone());
+        let error = decoder
+            .receive(9282, &msg(11, build.as_bytes()))
+            .unwrap_err();
+        assert!(error.contains("release/platform must match"));
+        assert!(!decoder.build_verified());
+        assert_eq!(decoder.observed_build(), Some(build));
+        assert_eq!(decoder.build_match(), None);
+    }
+    for build in [
+        "OSRELWin7.1.0",
+        "OSRELWin7.1.0_R1_S2",
+        "OSRELWin7.1.0_R_S2_D3",
+        "OSRELWin7.1.0_R1_S_D3",
+        "OSRELWin7.1.0_R1_S2_D",
+        "OSRELWin7.1.0_R-1_S2_D3",
+        "OSRELWin7.1.0_R1_S+2_D3",
+        "OSRELWin7.1.0_R1_S2_Dthree",
+        "OSRELWin7.1.0_R1_S2_D3_extra",
+        "OSRELWin7.1.0_R1_S2_D3_D4",
+    ] {
+        let mut decoder = Decoder::default();
+        decoder.set_profile(profile.clone());
+        assert!(decoder.receive(9282, &msg(11, build.as_bytes())).is_err());
+        assert!(!decoder.build_verified());
+        assert_eq!(decoder.build_match(), None);
+        assert!(Profile::parse(&json.replace(&profile.game_build, build)).is_err());
+    }
+    let mut decoder = Decoder::default();
+    decoder.set_profile(profile.clone());
+    let body = msg(11, profile.game_build.as_bytes());
+    assert!(
+        decoder
+            .receive(9282, &[body.clone(), body].concat())
+            .is_err()
+    );
+    assert_eq!(decoder.observed_build(), None);
+    assert!(!decoder.build_verified());
 }
 
 #[test]

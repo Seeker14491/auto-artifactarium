@@ -34,11 +34,21 @@ impl Profile {
         let name = take(&mut map, "name")?;
         let game_build = take(&mut map, "game_build")?;
         let values: Vec<Value> = take(&mut map, "rules")?;
+        let provenance = map
+            .remove("provenance")
+            .map(serde_json::from_value)
+            .transpose()
+            .map_err(|e| format!("Invalid provenance: {e}"))?;
         no_unknown(map)?;
         let mut rules = Vec::new();
         for value in values {
             let mut map = object(value)?;
             let command_id = take(&mut map, "command_id")?;
+            let message = map
+                .remove("message")
+                .map(serde_json::from_value)
+                .transpose()
+                .map_err(|e| format!("Invalid message: {e}"))?;
             let entries = if map.contains_key("entries") {
                 take(&mut map, "entries")?
             } else {
@@ -68,6 +78,11 @@ impl Profile {
                 },
                 "scene" => Event::Scene {
                     scene: take(&mut map, "scene")?,
+                    decode: if map.contains_key("decode") {
+                        take(&mut map, "decode")?
+                    } else {
+                        Vec::new()
+                    },
                 },
                 "active_entity" => Event::ActiveEntity {
                     entity: take(&mut map, "entity")?,
@@ -94,6 +109,11 @@ impl Profile {
                     } else {
                         None
                     },
+                    motion: if map.contains_key("motion") {
+                        take(&mut map, "motion")?
+                    } else {
+                        Default::default()
+                    },
                 },
                 "local_team" => Event::LocalTeam {
                     scene: take(&mut map, "scene")?,
@@ -117,6 +137,7 @@ impl Profile {
                         match take::<String>(&mut map, "matching")?.as_str() {
                             "exact" => BuildMatching::Exact,
                             "data_revision" => BuildMatching::DataRevision,
+                            "release_version" => BuildMatching::ReleaseVersion,
                             other => return Err(format!("Unknown build matching policy {other}")),
                         }
                     } else {
@@ -130,6 +151,7 @@ impl Profile {
             no_unknown(map)?;
             rules.push(Rule {
                 command_id,
+                message,
                 entries,
                 filters,
                 event,
@@ -139,6 +161,7 @@ impl Profile {
             name,
             game_build,
             rules,
+            provenance,
         };
         profile.validate()?;
         Ok(profile)

@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use super::schema::{BuildMatching, Event, Profile};
+use super::schema::{BuildMatching, Event, MotionFields, Profile};
 use super::wire::{Position, messages, scalar, vector};
 
 pub type DecodeResult<T> = Result<T, String>;
@@ -39,6 +39,14 @@ pub struct Motion {
     pub stationary: DecodeResult<bool>,
 }
 
+/// Optional transmitted data. Missing fields remain absent, including on partial motion.
+#[derive(Debug, Clone, Default)]
+pub struct MotionMetadata {
+    pub state: Option<u32>,
+    pub state_name: Option<String>,
+    pub velocity: Option<Position>,
+}
+
 /// Typed protocol events. No account selection, timestamps, or measurement state.
 #[derive(Debug, Clone)]
 pub enum DecodedEvent {
@@ -56,6 +64,7 @@ pub enum DecodedEvent {
         entity: u32,
         /// None means a partial motion update with no transmitted position.
         motion: DecodeResult<Option<Motion>>,
+        metadata: DecodeResult<MotionMetadata>,
     },
     InvalidateReading,
     Invalidate,
@@ -182,6 +191,9 @@ impl Decoder {
                     BuildMatching::DataRevision => {
                         "only numeric D revision may differ; release/platform, R and S must match"
                     }
+                    BuildMatching::ReleaseVersion => {
+                        "numeric R, S and D revisions may differ; release/platform must match"
+                    }
                 };
                 build_failures.push(format!("{received}; expected {expected} ({policy})"));
             }
@@ -251,8 +263,18 @@ impl Decoder {
                         Event::LocalUid { uid } => {
                             events.push(DecodedEvent::LocalUid(required_u32(entry, uid)?))
                         }
-                        Event::Scene { scene } => {
-                            events.push(DecodedEvent::Scene(required_u32(entry, scene)?))
+                        Event::Scene { scene, decode } => {
+                            let raw =
+                                scalar(entry, scene)?.ok_or("Required scene integer missing")?;
+                            let mut value =
+                                u32::try_from(raw).map_err(|_| "Scene integer exceeds u32")?;
+                            for op in decode {
+                                value = op.apply(value);
+                            }
+                            if value == 0 {
+                                return Err("Zero scene/entity/UID".into());
+                            }
+                            events.push(DecodedEvent::Scene(value))
                         }
                         Event::ActiveEntity { entity, owner_uid } => {
                             identities.push(owned_entity(entry, entity, owner_uid.as_deref()));
@@ -295,10 +317,12 @@ impl Decoder {
                             tick_rate_hz,
                             axes,
                             stationary,
+                            motion: motion_fields,
                         } => {
                             events.push(DecodedEvent::Movement {
                                 command,
                                 entity: required_u32(entry, entity)?,
+                                metadata: motion_metadata(entry, motion_fields, *axes),
                                 motion: (|| {
                                     let positions = messages(entry, position)?;
                                     if positions.is_empty() {
@@ -347,6 +371,37 @@ impl Decoder {
         })();
         result.map_err(|error: String| format!("Command {command}: {error}"))
     }
+}
+
+fn motion_metadata(
+    bytes: &[u8],
+    mapping: &MotionFields,
+    axes: [u32; 3],
+) -> DecodeResult<MotionMetadata> {
+    let state = mapping
+        .state
+        .as_ref()
+        .map(|path| scalar(bytes, path))
+        .transpose()?
+        .flatten()
+        .map(u32::try_from)
+        .transpose()
+        .map_err(|_| "Motion state exceeds u32")?;
+    let velocity = if let Some(path) = &mapping.velocity {
+        let values = messages(bytes, path)?;
+        match values.as_slice() {
+            [] => None,
+            [value] => Some(vector(value, axes)?),
+            _ => return Err("Expected at most one velocity message".into()),
+        }
+    } else {
+        None
+    };
+    Ok(MotionMetadata {
+        state,
+        state_name: state.and_then(|id| mapping.states.get(&id).cloned()),
+        velocity,
+    })
 }
 
 fn required_u32(bytes: &[u8], path: &[u32]) -> DecodeResult<u32> {

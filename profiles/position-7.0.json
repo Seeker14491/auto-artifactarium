@@ -1,18 +1,25 @@
 {
   "name": "Capture-validated 7.0 coordinates",
   "game_build": "OSRELWin7.0.0_R47805902_S47829085_D48215702",
+  "provenance": {
+    "method": "Capture-validated mappings; public schema corroboration and motion metadata",
+    "source": "https://github.com/capyb2222/genshin-protocol/blob/8dc5a446dce378acff8d9af0bfb9d4c1ad5a4224/7.0.0/Deobfuscated.proto",
+    "sha256": "eca4e81d78f27f3a87c5ac67f56c429b19fbe174b07c58b1414f47ddff9779ab"
+  },
   "rules": [
     {
       "command_id": 26573,
+      "message": "PlayerLoginReq",
       "event": "build",
       "path": [8],
       "expected": "OSRELWin7.0.0_R47805902_S47829085_D48215702",
       "matching": "data_revision"
     },
-    { "command_id": 6000, "event": "local_uid", "uid": [4] },
-    { "command_id": 9342, "event": "invalidate" },
+    { "command_id": 6000, "message": "GetPlayerTokenRsp", "event": "local_uid", "uid": [4] },
+    { "command_id": 9342, "message": "PlayerEnterSceneNotify", "event": "invalidate" },
     {
       "command_id": 7886,
+      "message": "SceneTeamUpdateNotify",
       "entries": [2],
       "event": "local_team",
       "scene": [14],
@@ -20,9 +27,10 @@
       "owner_uid": [7],
       "active": [2]
     },
-    { "command_id": 1211, "event": "invalidate_reading" },
+    { "command_id": 1211, "message": "ChangeAvatarReq", "event": "invalidate_reading" },
     {
       "command_id": 6573,
+      "message": "SceneEntityAppearNotify",
       "filters": [{ "path": [10], "equals": 3 }],
       "event": "replace_entity",
       "previous": [13],
@@ -31,6 +39,7 @@
     },
     {
       "command_id": 7516,
+      "message": "UnionCmdNotify",
       "entries": [11],
       "event": "union",
       "command": [15],
@@ -38,6 +47,7 @@
     },
     {
       "command_id": 1185,
+      "message": "CombatInvocationsNotify",
       "entries": [14],
       "filters": [{ "path": [4], "equals": 7 }],
       "event": "movement",
@@ -46,7 +56,27 @@
       "tick": [6, 3],
       "tick_rate_hz": 1000,
       "axes": [1, 2, 3],
-      "stationary": { "path": [6, 2, 4], "equals": 2 }
+      "stationary": { "path": [6, 2, 4], "equals": 2 },
+      "motion": {
+        "state": [6, 2, 4],
+        "velocity": [6, 2, 3],
+        "states": {
+          "0": "NONE", "1": "RESET", "2": "STANDBY", "3": "STANDBY_MOVE",
+          "4": "WALK", "5": "RUN", "6": "DASH", "7": "CLIMB",
+          "8": "CLIMB_JUMP", "9": "STANDBY_TO_CLIMB", "10": "FIGHT",
+          "11": "JUMP", "12": "DROP", "13": "FLY", "14": "SWIM_MOVE",
+          "15": "SWIM_IDLE", "16": "SWIM_DASH", "17": "SWIM_JUMP",
+          "18": "SLIP", "19": "GO_UPSTAIRS", "20": "FALL_ON_GROUND",
+          "21": "JUMP_UP_WALL_FOR_STANDBY", "22": "JUMP_OFF_WALL",
+          "23": "POWERED_FLY", "24": "LADDER_IDLE", "25": "LADDER_MOVE",
+          "26": "LADDER_SLIP", "27": "STANDBY_TO_LADDER", "28": "LADDER_TO_STANDBY",
+          "29": "DANGER_STANDBY", "30": "DANGER_STANDBY_MOVE", "31": "DANGER_WALK",
+          "32": "DANGER_RUN", "33": "DANGER_DASH", "34": "CROUCH_IDLE",
+          "35": "CROUCH_MOVE", "36": "CROUCH_ROLL", "37": "NOTIFY",
+          "38": "LAND_SPEED", "39": "MOVE_FAIL_ACK", "40": "WATERFALL",
+          "41": "DASH_BEFORE_SHAKE"
+        }
+      }
     }
   ]
 }

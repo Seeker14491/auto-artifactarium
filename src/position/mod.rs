@@ -12,7 +12,7 @@ mod profile_json;
 mod schema;
 pub mod wire;
 
-pub use builtin::captured_7_0;
+pub use builtin::{captured_7_0, captured_7_1};
 pub use decoder::*;
 pub use schema::*;
 pub use wire::Position;

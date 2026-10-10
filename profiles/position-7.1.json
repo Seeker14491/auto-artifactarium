@@ -1,0 +1,163 @@
+{
+  "name": "Capture-validated 7.1 coordinates",
+  "game_build": "OSRELWin7.1.0_R48379043_S48455349_D48474090",
+  "provenance": {
+    "method": "Derived from the September 23, 2026 local 7.1 login, movement, jump, avatar-switch and teleport capture; observed motion-state names carried forward from the corroborated 7.0 schema"
+  },
+  "rules": [
+    {
+      "command_id": 9282,
+      "message": "PlayerLoginReq",
+      "event": "build",
+      "path": [
+        11
+      ],
+      "expected": "OSRELWin7.1.0_R48379043_S48455349_D48474090",
+      "matching": "release_version"
+    },
+    {
+      "command_id": 3713,
+      "message": "GetPlayerTokenRsp",
+      "event": "local_uid",
+      "uid": [
+        13
+      ]
+    },
+    {
+      "command_id": 9582,
+      "message": "PlayerEnterSceneNotify",
+      "event": "invalidate"
+    },
+    {
+      "command_id": 29245,
+      "message": "SceneTeamUpdateNotify",
+      "entries": [
+        8
+      ],
+      "event": "local_team",
+      "scene": [
+        6
+      ],
+      "entity": [
+        8
+      ],
+      "owner_uid": [
+        13
+      ],
+      "active": [
+        2
+      ]
+    },
+    {
+      "command_id": 20091,
+      "message": "ChangeAvatarReq",
+      "event": "invalidate_reading"
+    },
+    {
+      "command_id": 27685,
+      "message": "SceneEntityAppearNotify",
+      "filters": [
+        {
+          "path": [
+            10
+          ],
+          "equals": 3
+        }
+      ],
+      "event": "replace_entity",
+      "previous": [
+        3
+      ],
+      "entity": [
+        8,
+        2
+      ],
+      "owner_uid": [
+        8,
+        10,
+        1
+      ]
+    },
+    {
+      "command_id": 2246,
+      "message": "UnionCmdNotify",
+      "entries": [
+        8
+      ],
+      "event": "union",
+      "command": [
+        13
+      ],
+      "body": [
+        6
+      ]
+    },
+    {
+      "command_id": 6930,
+      "message": "CombatInvocationsNotify",
+      "entries": [
+        9
+      ],
+      "filters": [
+        {
+          "path": [
+            6
+          ],
+          "equals": 7
+        }
+      ],
+      "event": "movement",
+      "entity": [
+        15,
+        1
+      ],
+      "position": [
+        15,
+        2,
+        1
+      ],
+      "tick": [
+        15,
+        3
+      ],
+      "tick_rate_hz": 1000,
+      "axes": [
+        1,
+        2,
+        3
+      ],
+      "stationary": {
+        "path": [
+          15,
+          2,
+          4
+        ],
+        "equals": 2
+      },
+      "motion": {
+        "state": [
+          15,
+          2,
+          4
+        ],
+        "velocity": [
+          15,
+          2,
+          3
+        ],
+        "states": {
+          "2": "STANDBY",
+          "4": "WALK",
+          "5": "RUN",
+          "6": "DASH",
+          "11": "JUMP",
+          "20": "FALL_ON_GROUND",
+          "29": "DANGER_STANDBY",
+          "37": "NOTIFY",
+          "38": "LAND_SPEED",
+          "41": "DASH_BEFORE_SHAKE"
+        }
+      }
+    }
+  ]
+}
